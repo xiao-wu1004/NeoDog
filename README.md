@@ -18,12 +18,14 @@ LED模块：
     GPIO的输入输出方式：输出有4种：具有上拉下拉功能的开漏输出，具有上拉下拉功能的推挽输出，具有上拉下拉功能的复用开漏，具有上拉下拉功能的复用推挽
                       输入有4种：上拉输入，浮空输入，下拉输入，模拟输入			
 			
-![输入图片说明](GPIOimage.png)
+<img width="1747" height="738" alt="image" src="https://github.com/user-attachments/assets/5d1e2b94-9b82-475b-8f57-88474412b35e" />
+
 
 温湿度模块：
     硬件为SHT20，SHT20 是 Sensirion 公司生产的一款高精度数字温湿度传感器，采用 I²C 通信，具有 ±0.3℃ 温度精度和 ±2%RH 湿度精度，支持低功耗模式，适用于智能家居、环境监测等应用。
     sht20流程：
-        ![输入图片说明](sht20image.png)
+        <img width="865" height="714" alt="image" src="https://github.com/user-attachments/assets/210f791a-890b-4497-ac9c-159fe9ee1408" />
+
 
     
 IIC过程：
