@@ -1,0 +1,458 @@
+#include "drv_all.h"
+
+#include "oled.h"
+
+// 定义所有全局控制标志
+volatile uint8_t wk_flag = 0;            // 行走标志
+volatile uint8_t robot_standup_flag = 0; // 站立标志
+volatile uint8_t robot_sitdown_flag = 0; // 坐下标志
+
+// 定义舵机通道常量
+#define FRONT_LEFT_HIP  1   // 左前髋关节
+#define FRONT_RIGHT_KNEE 2  // 右前膝关节
+#define REAR_LEFT_KNEE  3   // 左后膝关节
+#define REAR_RIGHT_HIP  4   // 右后髋关节
+
+// 定义动作速度常量
+#define STANDUP_DELAY_MS 20
+#define WALK_DELAY_MS 15
+#define DANCE_DELAY_MS 80
+
+/**
+ * @brief 初始化SG90舵机
+ */
+void sg90_init(void)
+{
+    tim3_init(); // 使能定时器3
+    printf("SG90 Initialized\r\n");
+}
+
+/**
+ * @brief 设置舵机角度
+ * @param ch 通道号 (1-4)
+ * @param angle 目标角度 (0-180)
+ */
+void sg90_set_angle(uint8_t ch, uint8_t angle)
+{
+    // 安全检查
+    if (ch < 1 || ch > 4)
+    {
+        return;
+    }
+
+    angle = (angle > 180) ? 180 : angle;
+    // 计算脉冲宽度 (500-2500us对应0-180度)
+    uint16_t pulse = 500 + (uint16_t)(angle * (2000.0f / 180.0f));
+
+    // 设置对应通道的PWM
+    switch (ch)
+    {
+        case FRONT_LEFT_HIP:
+            TIM_SetCompare1(TIM3, pulse);
+            break;
+
+        case FRONT_RIGHT_KNEE:
+            TIM_SetCompare2(TIM3, pulse);
+            break;
+
+        case REAR_LEFT_KNEE:
+            TIM_SetCompare3(TIM3, pulse);
+            break;
+
+        case REAR_RIGHT_HIP:
+            TIM_SetCompare4(TIM3, pulse);
+            break;
+    }
+}
+
+/**
+ * @brief 机器人站立到中立位置
+ */
+void robot_standup()
+{
+    sg90_set_angle(FRONT_LEFT_HIP, 90);
+    sg90_set_angle(FRONT_RIGHT_KNEE, 90);
+    sg90_set_angle(REAR_LEFT_KNEE, 90);
+    sg90_set_angle(REAR_RIGHT_HIP, 90);
+    tim4_delay_ms(STANDUP_DELAY_MS);
+}
+
+/**
+ * @brief 机器人坐下到休息位置
+ */
+void robot_sitdown()
+{
+    const uint8_t steps = 20;
+    const uint16_t step_delay = 10;
+
+    for (uint8_t i = 0; i <= steps; i++)
+    {
+        float ratio = i / (float)steps;
+        sg90_set_angle(FRONT_LEFT_HIP, 90 - 45 * ratio);
+        sg90_set_angle(FRONT_RIGHT_KNEE, 90 + 45 * ratio);
+        sg90_set_angle(REAR_LEFT_KNEE, 90 + 45 * ratio);
+        sg90_set_angle(REAR_RIGHT_HIP, 90 - 45 * ratio);
+        tim4_delay_ms(step_delay);
+    }
+}
+
+/**
+ * @brief 机器人连续行走
+ */
+bool robot_walk_continuous(void)
+{
+    //    OLED_Clear();
+    //    OLED_ShowPicture(0, 0, 128, 64, liuhan_BMP128, 1);
+    //    OLED_Refresh();
+    //    tim4_delay_ms(1000);
+    //    OLED_Clear();
+    static uint8_t phase = 0;
+
+    switch (phase)
+    {
+        case 0:
+            // 相位1：对角腿抬起(左前+右后)
+            sg90_set_angle(FRONT_LEFT_HIP, 60);
+            sg90_set_angle(REAR_RIGHT_HIP, 120);
+            //tim4_delay_ms(WALK_DELAY_MS);
+            phase++;
+            break;
+
+        case 1:
+            // 相位2：对角腿向前摆动
+            sg90_set_angle(FRONT_LEFT_HIP, 30);
+            sg90_set_angle(REAR_RIGHT_HIP, 150);
+            //tim4_delay_ms(WALK_DELAY_MS);
+            phase++;
+            break;
+
+        case 2:
+            // 相位3：对角腿放下
+            sg90_set_angle(FRONT_LEFT_HIP, 60);
+            sg90_set_angle(REAR_RIGHT_HIP, 120);
+            //tim4_delay_ms(WALK_DELAY_MS);
+            phase++;
+            break;
+
+        case 3:
+            // 相位4：身体前倾
+            sg90_set_angle(FRONT_RIGHT_KNEE, 70);
+            sg90_set_angle(REAR_LEFT_KNEE, 110);
+            //tim4_delay_ms(WALK_DELAY_MS);
+            phase++;
+            break;
+
+        case 4:
+            // 相位5：另一对角腿抬起(右前+左后)
+            sg90_set_angle(REAR_LEFT_KNEE, 60);
+            sg90_set_angle(FRONT_RIGHT_KNEE, 120);
+            //tim4_delay_ms(WALK_DELAY_MS);
+            phase++;
+            break;
+
+        case 5:
+            // 相位6：另一对角腿向前摆动
+            sg90_set_angle(REAR_LEFT_KNEE, 30);
+            sg90_set_angle(FRONT_RIGHT_KNEE, 150);
+            //tim4_delay_ms(WALK_DELAY_MS);
+            phase++;
+            break;
+
+        case 6:
+            // 相位7：另一对角腿放下
+            sg90_set_angle(REAR_LEFT_KNEE, 60);
+            sg90_set_angle(FRONT_RIGHT_KNEE, 120);
+            //tim4_delay_ms(WALK_DELAY_MS);
+            phase++;
+            break;
+
+        case 7:
+            // 相位8：身体前倾
+            sg90_set_angle(FRONT_LEFT_HIP, 70);
+            sg90_set_angle(REAR_RIGHT_HIP, 110);
+            //tim4_delay_ms(WALK_DELAY_MS);
+            phase++;
+            break;
+
+        case 8:
+            phase = 0;
+            return true;
+    }
+
+    return false;
+}
+
+/**
+ * @brief 机器人跳舞动作
+ */
+bool robot_dance(void)
+{
+    static uint8_t phase = 0;
+
+    switch (phase)
+    {
+        // 1. 准备姿势 - 站立
+        case 0:
+            robot_standup();
+
+            //    //tim4_delay_ms(DANCE_DELAY_MS);
+            //    OLED_Clear();
+            //    OLED_ShowPicture(0, 0, 128, 64, tiaowu, 1);
+            //    OLED_Refresh();
+            //    tim4_delay_ms(1000);
+
+            // 2. 摇摆动作
+            for (uint8_t i = 0; i < 4; i++)
+            {
+                // 向左倾斜
+                sg90_set_angle(FRONT_LEFT_HIP, 60);
+                sg90_set_angle(FRONT_RIGHT_KNEE, 120);
+                sg90_set_angle(REAR_LEFT_KNEE, 60);
+                sg90_set_angle(REAR_RIGHT_HIP, 120);
+                //tim4_delay_ms(DANCE_DELAY_MS);
+                // 向右倾斜
+                sg90_set_angle(FRONT_LEFT_HIP, 120);
+                sg90_set_angle(FRONT_RIGHT_KNEE, 60);
+                sg90_set_angle(REAR_LEFT_KNEE, 120);
+                sg90_set_angle(REAR_RIGHT_HIP, 60);
+                //tim4_delay_ms(DANCE_DELAY_MS);
+            }
+
+            phase++;
+            break;
+
+        case 1:
+            // 3. 复位到站立姿势
+            robot_standup();
+
+            //tim4_delay_ms(DANCE_DELAY_MS);
+
+            // 4. 快速踏步
+            for (uint8_t i = 0; i < 8; i++)
+            {
+                // 抬起对角腿
+                if (i % 2 == 0)
+                {
+                    sg90_set_angle(FRONT_LEFT_HIP, 60);
+                    sg90_set_angle(REAR_RIGHT_HIP, 120);
+                }
+                else
+                {
+                    sg90_set_angle(FRONT_RIGHT_KNEE, 60);
+                    sg90_set_angle(REAR_LEFT_KNEE, 120);
+                }
+
+                //tim4_delay_ms(DANCE_DELAY_MS);
+                // 放下腿
+                robot_standup();
+                //tim4_delay_ms(DANCE_DELAY_MS);
+            }
+
+            phase++;
+            break;
+
+        case 2:
+
+            // 5. 旋转动作
+            for (uint8_t i = 0; i < 2; i++)
+            {
+                // 顺时针旋转
+                sg90_set_angle(FRONT_LEFT_HIP, 45);
+                sg90_set_angle(FRONT_RIGHT_KNEE, 135);
+                sg90_set_angle(REAR_LEFT_KNEE, 45);
+                sg90_set_angle(REAR_RIGHT_HIP, 135);
+                //tim4_delay_ms(DANCE_DELAY_MS);
+                // 逆时针旋转
+                sg90_set_angle(FRONT_LEFT_HIP, 135);
+                sg90_set_angle(FRONT_RIGHT_KNEE, 45);
+                sg90_set_angle(REAR_LEFT_KNEE, 135);
+                sg90_set_angle(REAR_RIGHT_HIP, 45);
+                //tim4_delay_ms(DANCE_DELAY_MS);
+            }
+
+            phase++;
+            break;
+
+        case 3:
+
+            // 6. 结束动作 - 鞠躬
+            for (uint8_t i = 0; i <= 20; i++)
+            {
+                float ratio = i / 20.0f;
+                sg90_set_angle(FRONT_LEFT_HIP, 90 - 30 * ratio);
+                sg90_set_angle(FRONT_RIGHT_KNEE, 90 + 30 * ratio);
+                tim4_delay_ms(10);
+            }
+
+            //tim4_delay_ms(DANCE_DELAY_MS);
+            // 7. 恢复站立
+            robot_standup();
+            phase++;
+            break;
+
+        case 4:
+            phase = 0;
+            return false;
+    }
+
+    return false;
+}
+
+/**
+ * @brief 机器人原地左转
+ * @param steps 转动步数（每步约15-30度）
+ * @param speed 动作速度（毫秒延迟）
+ */
+bool robot_turn_left(uint8_t steps, uint16_t speed)
+{
+
+
+    for (uint8_t i = 0; i < steps; i++)
+    {
+        // 抬起右前腿和左后腿
+        sg90_set_angle(FRONT_RIGHT_KNEE, 60);
+        sg90_set_angle(REAR_LEFT_KNEE, 120);
+        tim4_delay_ms(speed / 2);
+        // 转动身体（左前和右后腿推动）
+        sg90_set_angle(FRONT_LEFT_HIP, 70);
+        sg90_set_angle(REAR_RIGHT_HIP, 110);
+        tim4_delay_ms(speed);
+        // 放下腿
+        sg90_set_angle(FRONT_RIGHT_KNEE, 90);
+        sg90_set_angle(REAR_LEFT_KNEE, 90);
+        tim4_delay_ms(speed / 2);
+        // 调整支撑腿
+        sg90_set_angle(FRONT_LEFT_HIP, 90);
+        sg90_set_angle(REAR_RIGHT_HIP, 90);
+        tim4_delay_ms(speed / 2);
+    }
+
+    return true;
+}
+
+/**
+ * @brief 机器人原地右转
+ * @param steps 转动步数（每步约15-30度）
+ * @param speed 动作速度（毫秒延迟）
+ */
+bool robot_turn_right(uint8_t steps, uint16_t speed)
+{
+//    OLED_Clear();
+//    OLED_ShowPicture(32, 0, 64, 64, right, 1);
+//    OLED_Refresh();
+//    tim4_delay_ms(1000);
+//    OLED_Clear();
+
+    for (uint8_t i = 0; i < steps; i++)
+    {
+        // 抬起左前腿和右后腿
+        sg90_set_angle(FRONT_LEFT_HIP, 120);
+        sg90_set_angle(REAR_RIGHT_HIP, 60);
+        tim4_delay_ms(speed / 2);
+        // 转动身体（右前和左后腿推动）
+        sg90_set_angle(FRONT_RIGHT_KNEE, 110);
+        sg90_set_angle(REAR_LEFT_KNEE, 70);
+        tim4_delay_ms(speed);
+        // 放下腿
+        sg90_set_angle(FRONT_LEFT_HIP, 90);
+        sg90_set_angle(REAR_RIGHT_HIP, 90);
+        tim4_delay_ms(speed / 2);
+        // 调整支撑腿
+        sg90_set_angle(FRONT_RIGHT_KNEE, 90);
+        sg90_set_angle(REAR_LEFT_KNEE, 90);
+        tim4_delay_ms(speed / 2);
+    }
+
+    return true;
+}
+
+/**
+ * @brief 趴下状态单臂打招呼
+ * @param times 挥手次数
+ * @param speed 动作速度（毫秒延迟）
+ */
+bool robot_greet(uint8_t times, uint16_t speed)
+{
+    static uint8_t phase = 0;
+
+    switch(phase)
+    {
+        case 0:
+            // 1. 先趴下（低姿态更稳定）
+            robot_sitdown();
+            //tim4_delay_ms(DANCE_DELAY_MS);
+            // 2. 调整到适合挥手的趴姿
+            sg90_set_angle(FRONT_LEFT_HIP, 45);
+            sg90_set_angle(FRONT_RIGHT_KNEE, 90);
+            sg90_set_angle(REAR_LEFT_KNEE, 135);
+            sg90_set_angle(REAR_RIGHT_HIP, 90);
+            //tim4_delay_ms(DANCE_DELAY_MS);
+            phase++;
+            break;
+
+        case 1:
+
+            // 3. 单臂挥手动作（控制右后腿）
+            for (uint8_t i = 0; i < times; i++)
+            {
+                // 抬起阶段
+                for (uint8_t angle = 90; angle <= 150; angle += 10)
+                {
+                    sg90_set_angle(REAR_RIGHT_HIP, angle);
+                    tim4_delay_ms(speed / 4);
+                }
+
+                // 左右摆动
+                sg90_set_angle(REAR_RIGHT_HIP, 120);
+                tim4_delay_ms(speed / 2);
+                sg90_set_angle(REAR_RIGHT_HIP, 180);
+                tim4_delay_ms(speed / 2);
+                sg90_set_angle(REAR_RIGHT_HIP, 150);
+                tim4_delay_ms(speed / 2);
+
+                // 放下阶段
+                for (uint8_t angle = 150; angle >= 90; angle -= 10)
+                {
+                    sg90_set_angle(REAR_RIGHT_HIP, angle);
+                    tim4_delay_ms(speed / 4);
+                }
+
+                tim4_delay_ms(speed);
+            }
+
+            // 4. 恢复站立
+            robot_standup();
+            //tim4_delay_ms(DANCE_DELAY_MS);
+            phase++;
+            break;
+
+        case 2:
+            phase = 0;
+            return true;
+    }
+
+    return false;
+}
+
+/**
+ * @brief 测试所有舵机
+ */
+void test_all_servos(void)
+{
+    const uint8_t test_angles[] = {0, 45, 90, 135, 180};
+    const uint8_t num_angles = sizeof(test_angles) / sizeof(test_angles[0]);
+
+    for (uint8_t i = 0; i < num_angles; i++)
+    {
+        printf("Testing angle %d:\r\n", test_angles[i]);
+
+        for (uint8_t ch = 1; ch <= 4; ch++)
+        {
+            sg90_set_angle(ch, test_angles[i]);
+            tim4_delay_ms(150);
+        }
+    }
+
+    // 返回中立位置
+    robot_standup();
+}

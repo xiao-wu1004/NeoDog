@@ -1,0 +1,27 @@
+---- xTaskCreate Matches (28 in 4 files) ----
+main in main.c (D:\Keil_v5_project\test_demo2\apps) : xTaskCreate(TaskFunction_t pxTaskCode, const char * const pcName, const uint16_t usStackDepth, void * const pvParameters, UBaseType_t uxPriority, TaskHandle_t * const pxCreatedTask)
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 96 :  * Type by which tasks are referenced.  For example, a call to xTaskCreate
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 269 :  BaseType_t xTaskCreate(
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 283 :  * xTaskCreate() then both blocks of memory are automatically dynamically
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 284 :  * allocated inside the xTaskCreate() function.  (see
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 293 :  * xTaskCreate() can only be used to create a task that has unrestricted
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 346 : 	 xTaskCreate( vTaskCode, "NAME", STACK_SIZE, &ucParameterToPass, tskIDLE_PRIORITY, &xHandle );
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 356 :  * \defgroup xTaskCreate xTaskCreate
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 360 : 	BaseType_t xTaskCreate(	TaskFunction_t pxTaskCode,
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 384 :  * xTaskCreate() then both blocks of memory are automatically dynamically
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 385 :  * allocated inside the xTaskCreate() function.  (see
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 498 :  * for each of the normal xTaskCreate() parameters (see the xTaskCreate() API
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 634 : 	 xTaskCreate( vTaskCode, "NAME", STACK_SIZE, NULL, tskIDLE_PRIORITY, &xHandle );
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 802 : 	 xTaskCreate( vTaskCode, "NAME", STACK_SIZE, NULL, tskIDLE_PRIORITY, &xHandle );
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 934 : 	 xTaskCreate( vTaskCode, "NAME", STACK_SIZE, NULL, tskIDLE_PRIORITY, &xHandle );
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 976 : 	 xTaskCreate( vTaskCode, "NAME", STACK_SIZE, NULL, tskIDLE_PRIORITY, &xHandle );
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 1025 : 	 xTaskCreate( vTaskCode, "NAME", STACK_SIZE, NULL, tskIDLE_PRIORITY, &xHandle );
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 1100 : 	 xTaskCreate( vTaskCode, "NAME", STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 1154 : 	 xTaskCreate( vTaskCode, "NAME", STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 1666 :  * task can be returned from the xTaskCreate() API function used to create the
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 1752 :  * task can be returned from the xTaskCreate() API function used to create the
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 1915 :  * task can be returned from the xTaskCreate() API function used to create the
+task.h (D:\Keil_v5_project\test_demo2\freertos\Source\include) line 1964 :  * task can be returned from the xTaskCreate() API function used to create the
+tasks.c (D:\Keil_v5_project\test_demo2\freertos\Source) line 676 : 	BaseType_t xTaskCreate(	TaskFunction_t pxTaskCode,
+vTaskStartScheduler in tasks.c (D:\Keil_v5_project\test_demo2\freertos\Source) : 		xReturn = xTaskCreate(	prvIdleTask,
+prvInsertTimerInActiveList in timers.c (D:\Keil_v5_project\test_demo2\freertos\Source) : 			xReturn = xTaskCreate(	prvTimerTask,

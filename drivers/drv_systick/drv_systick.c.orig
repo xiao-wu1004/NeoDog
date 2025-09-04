@@ -1,0 +1,97 @@
+
+#include "drv_all.h"
+static uint32_t fs_us = 0;
+static uint32_t fs_ms = 0;
+
+/*
+SysTick 定时器 （PC） 该处理器配备有一个 24 位的系统定时器——SysTick，
+它会从重载值开始依次递减至零，然后在下一个时钟脉冲到来时重新加载（循环到）STK_
+	LOAD 寄存器中的值，
+之后会在后续的时钟脉冲中继续递减.
+当处理器因调试而停止运行时，计数器不会进行递减操作。
+*/
+void drv_systick_init(uint32_t systick)
+{
+    SysTick->CTRL		&= ~(0x05); 				//清零
+    fs_us				= systick / 8;				//计算1us需要计数的次数
+    fs_ms				= fs_us * 1000; 			//计算1ms需要计数的次数
+
+}
+
+
+void drv_systick_ms(uint32_t ms)
+{
+    uint32_t		time_count;
+    uint32_t		temp = 0;
+    uint32_t		systick_flag = 0;
+
+    time_count			= fs_ms * ms;
+
+    while (systick_flag == 0)
+    {
+        if (time_count > 0xffffff)
+        {
+            SysTick->LOAD		= 0xffffff;
+            SysTick->CTRL		|= 0x01;
+            time_count			-= 0xffffff;
+        }
+        else
+        {
+            SysTick->LOAD		= time_count;
+            SysTick->CTRL		|= 0x01;
+            systick_flag		= 1;
+        }
+
+        do
+        {
+            temp				= SysTick->CTRL;
+        }
+        while(! (temp & (0x01 << 16)));
+
+        SysTick->CTRL		&= ~(0x01); 			//关闭systick
+        SysTick->VAL		= 0;					//清空计时器的值
+    }
+
+
+}
+
+
+void drv_systick_us(uint32_t us)
+{
+    uint32_t		temp = 0;
+    uint32_t		time_count;
+
+    time_count			= fs_us * us;
+    uint32_t		systick_flag = 0;
+
+    while (systick_flag == 0)
+    {
+        if (time_count > 0xffffff)
+        {
+            SysTick->LOAD		= 0xffffff;
+            SysTick->CTRL		|= 0x01;
+            time_count			-= 0xffffff;
+        }
+        else
+        {
+            SysTick->LOAD		= time_count;
+            SysTick->CTRL		|= 0x01;
+            systick_flag		= 1;
+        }
+
+        do
+        {
+            temp				= SysTick->CTRL;
+        }
+        while(! (temp & (0x01 << 16)));
+
+        SysTick->CTRL		&= ~(0x01); 			//关闭systick
+        SysTick->VAL		= 0;					//清空计时器的值
+
+    }
+
+
+
+}
+
+
