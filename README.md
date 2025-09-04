@@ -5,7 +5,8 @@
 
 #### 项目架构
 项目总体架构说明
-![输入图片说明](%E9%A1%B9%E7%9B%AE%E6%A1%86%E5%9B%BEimage.png)
+<img width="1199" height="1058" alt="image" src="https://github.com/user-attachments/assets/324dd838-17a6-4c9d-aff7-7c7800e92fcc" />
+
 OLED模块：
     使用IIC协议与主控通信，能够显示温湿度信息以及走路、打招呼、左转、右转、跳舞等动作时的不同表情,提升项目交互性和可视化效果
     IIC协议：
